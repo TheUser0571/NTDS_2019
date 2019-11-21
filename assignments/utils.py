@@ -10,7 +10,7 @@ def _subsample_mnist(images, labels, n):
     keep_by_class = int(n / n_classes)
     for i in range(10):
         if i in classes:
-            belongs_to_class_i = np.where(labels==i)[0]
+            belongs_to_class_i = np.where(labels == i)[0]
             indices_to_keep = np.append(indices_to_keep, belongs_to_class_i[:keep_by_class])
 
     X = images[indices_to_keep]
@@ -22,11 +22,11 @@ def load_mnist():
     """Load the MNIST dataset."""
 
     mnist = fetch_openml('mnist_784')
-    images =  mnist['data'][:10000]
+    images = mnist['data'][:10000]
     labels = np.array(list(map(int, mnist['target'][:10000])))
 
     classes = np.unique(labels)
-    n_clusters_mnist = len(classes)
+#    n_clusters_mnist = len(classes)
     keep_per_class = 300
     n = keep_per_class * len(classes)
     images = np.array(images)
