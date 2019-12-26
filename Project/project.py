@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import functions
 from functions import *
 import networkx as nx
+import matplotlib
 
 # %%
 BASE_PATH = 'P:/Python/Network_tour/Data_for_project/'  # adjust if necessary
@@ -24,7 +25,7 @@ nodes.columns
 load_signal.columns
 
 load_signal['1']
-# %% generate graph
+# %% generate graph (there are 969 generators in total)
 
 
 graph = nx.Graph()
@@ -196,4 +197,48 @@ plt.subplot(224)
 plot_signal_on_graph(lon, lat, x=year, title='Fourier component of load time series corresponding to once a year frequency', vlim=(0, np.max(year)))
 plot_power_lines(edge_list_lon, edge_list_lat)
 plt.show()
+
+# %%
+# generator graph (the IDs of the generators do not correspond to the IDs of the nodes.
+geny=generator.to_numpy()
+nod=nodes.to_numpy()
+print(np.max(geny[:,0]))
+print(geny[np.argmin(geny[:,0]),0:3])
+nod[0:130,0:3]
+
+
+# %%
+graph_generator = nx.Graph()
+
+# to import nodes to graph one needs a list of IDs and to import edges one need a list of tuples
+node_list = generator['ID'].tolist()
+
+# lon = x, lat = y - for plotting graph on map
+lon = generator['longitude']
+lat = generator['latitude']
+
+graph.add_nodes_from(node_list)
+
+# %%
+geny = generator.to_numpy()
+
+plt.figure(1)
+
+
+def plot_generator(geny):
+
+    types = np.unique(geny[:,7])
+    colours = matplotlib.colors.ListedColormap(['k', 'b', 'y', 'g', 'r', 'chocolate', 'magenta', 'cyan', 'indigo'])
+    generator_type = dict(zip(types, np.arange(10)))
+    sizes = (geny[:, 9]/10)
+    node_list = geny[:, 0]
+    fig = plt.gcf()
+    ax = plt.gca()
+    scatter = ax.scatter(geny[:, 5], geny[:, 4], c=list(map(generator_type.get, geny[:,7])), cmap=colours, s=list(sizes))
+    legend1 = plt.legend(handles=scatter.legend_elements()[0], labels=list(types) ,title="Fuel type")
+    ax.add_artist(legend1)
+    plt.show()
+
+
+plot_generator(geny)
 
