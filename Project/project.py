@@ -2,19 +2,24 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-
+import os
 import functions
 from functions import *
 import networkx as nx
 import matplotlib
+import matplotlib.image as mpimg
 
 # %%
-BASE_PATH = 'P:/Python/Network_tour/Data_for_project/'  # adjust if necessary
+#BASE_PATH = 'P:/Python/Network_tour/Data_for_project/'  # adjust if necessary
+
+BASE_PATH = 'C:/Users/kay-1/Documents/NTDS_data/'  # Kay's path ;)
 
 edges = pd.read_csv(BASE_PATH + 'edges.csv')
 nodes = pd.read_csv(BASE_PATH + 'nodes.csv')
 generator = pd.read_csv(BASE_PATH + 'generator.csv')
 load_signal = pd.read_csv(BASE_PATH + 'load.csv')
+# %% load map of europe
+map_img = mpimg.imread('europe_map.png')
 # %%
 generator.columns
 
@@ -25,7 +30,7 @@ nodes.columns
 load_signal.columns
 
 load_signal['1']
-# %% generate graph (there are 969 generators in total)
+# %% generate graph (there are 969 nodes in total)
 
 
 graph = nx.Graph()
@@ -56,6 +61,7 @@ graph.add_weighted_edges_from(weighted_edge_list)  # constructing weighted graph
 
 # %% plot graph
 plt.figure()
+plot_map(map_img)
 plot_signal_on_graph(lon, lat, title='Graph representation')
 plot_power_lines(edge_list_lon, edge_list_lat)
 plt.show()
@@ -90,7 +96,7 @@ laplacian = compute_laplacian(adjacency, normalize=True)  # adjacency matrix nee
 # spectral decomposition
 lam, U = spectral_decomposition(laplacian)
 
-plot_fig = True  # set false to not plot eigenfunctions
+plot_fig = False  # set false to not plot eigenfunctions
 if plot_fig is True:
     plt.figure(figsize=(18, 9))
     plt.subplot(231)
@@ -125,6 +131,7 @@ mean_load_day1 = mean_load_day1.reshape(len(mean_load_day1), -1)
 
 # plot averaged load signal on graph (adjust vlim if necessary, vlim are the clip values of the signal for representation)
 plt.figure()
+plot_map(map_img)
 plot_signal_on_graph(lon, lat, x=mean_load_day1, title='Normalised load over one day', vlim=(0, 0.06))
 plot_power_lines(edge_list_lon, edge_list_lat)
 plt.show()
@@ -141,7 +148,7 @@ clustering_coeff = nx.average_clustering(graph)
 print(f'Clustering coefficient: {clustering_coeff}')
 
 # %% fourier transform of time series
-load_node = load_signal.to_numpy()[:, 4]
+load_node = load_signal.to_numpy()[:, 4].astype(float)
 n_sample=len(load_node)
 x = np.arange(n_sample)
 sampling_frequency = 1 # because we sample once an hour -> 24 times a day
@@ -160,7 +167,7 @@ import importlib
 import functions
 importlib.reload(functions)
 
-numpy_load_signal=load_signal.to_numpy()[:,1:]
+numpy_load_signal=load_signal.to_numpy()[:,1:].astype(float)
 half_day=np.zeros((numpy_load_signal.shape[1],1))
 day=np.zeros((numpy_load_signal.shape[1],1))
 week=np.zeros((numpy_load_signal.shape[1],1))
@@ -182,18 +189,22 @@ year[(np.isnan(year))]=0
 
 plt.figure(figsize=(18, 9))
 plt.subplot(221)
+plot_map(map_img)
 plot_signal_on_graph(lon, lat, x=half_day, title='Fourier component of load time series corresponding to once every half day frequency', vlim=(0, np.max(half_day)))
 plot_power_lines(edge_list_lon, edge_list_lat)
 
 plt.subplot(222)
+plot_map(map_img)
 plot_signal_on_graph(lon, lat, x=day, title='Fourier component of load time series corresponding to once a day frequency', vlim=(0, np.max(day)))
 plot_power_lines(edge_list_lon, edge_list_lat)
 
 plt.subplot(223)
+plot_map(map_img)
 plot_signal_on_graph(lon, lat, x=week, title='Fourier component of load time series corresponding to once a week frequency', vlim=(0, np.max(week)))
 plot_power_lines(edge_list_lon, edge_list_lat)
 
 plt.subplot(224)
+plot_map(map_img)
 plot_signal_on_graph(lon, lat, x=year, title='Fourier component of load time series corresponding to once a year frequency', vlim=(0, np.max(year)))
 plot_power_lines(edge_list_lon, edge_list_lat)
 plt.show()
@@ -214,8 +225,8 @@ graph_generator = nx.Graph()
 node_list = generator['ID'].tolist()
 
 # lon = x, lat = y - for plotting graph on map
-lon = generator['longitude']
-lat = generator['latitude']
+lon_g = generator['longitude']
+lat_g = generator['latitude']
 
 graph.add_nodes_from(node_list)
 
@@ -239,6 +250,103 @@ def plot_generator(geny):
     ax.add_artist(legend1)
     plt.show()
 
-
+plot_map(map_img)
 plot_generator(geny)
+#plot_power_lines(edge_list_lon, edge_list_lat)
+# %% load forcast data (only run this if really necessary - it takes for ever)
+run_this_bit = False  # set true if you need to generate the csv file again
+if run_this_bit is True:
+    # get list of all 2192 folders containing the forcast data
+    BASE_PATH_FORECAST = BASE_PATH + 'Nodal_FC/'
+    folders = [x[0] for x in os.walk(BASE_PATH_FORECAST)][1:]  # [1:] removes the parent directory
+    # extract the forecast data from all folders
+    for i, base in enumerate(folders):
+        # get the first 12h of every forecast
+        tmp_solar_fc = pd.read_csv(base + '/solar_forecast.csv').to_numpy()[:12,1:]
+        tmp_wind_fc = pd.read_csv(base + '/wind_forecast.csv').to_numpy()[:12,1:]
+        print(f'running... {np.round(i/len(folders)*100, decimals=2)}%')
+        # stack them on top of each other
+        if i == 0:
+            solar_fc = tmp_solar_fc
+            wind_fc = tmp_wind_fc
+        else:
+            solar_fc = np.append(solar_fc, tmp_solar_fc, axis=0)
+            wind_fc = np.append(wind_fc, tmp_wind_fc, axis=0)
+    print('done!')
+    # save generated data as csv file for fast reloading
+    np.savetxt(BASE_PATH + 'solar_fc.csv', solar_fc, delimiter=',')
+    np.savetxt(BASE_PATH + 'wind_fc.csv', wind_fc, delimiter=',')
+# %% load forecast data from csv file (run this instead of the above if the csv file is already generated!)
+solar_fc = np.loadtxt(BASE_PATH + 'solar_fc.csv', delimiter=',')
+wind_fc = np.loadtxt(BASE_PATH + 'wind_fc.csv', delimiter=',')
+# %% load power capacities
+# directly convert to numpy and extract the proportional capacities
+solar_cp = pd.read_csv(BASE_PATH + 'solar_layouts_COSMO.csv').to_numpy()[:,1]
+wind_cp = pd.read_csv(BASE_PATH + 'wind_layouts_COSMO.csv').to_numpy()[:,1]
+# %% load actual data
+solar_ts_complete = pd.read_csv(BASE_PATH + 'solar_signal_COSMO.csv').to_numpy()
+solar_ts = solar_ts_complete[:,1:]
+wind_ts = pd.read_csv(BASE_PATH + 'wind_signal_COSMO.csv').to_numpy()[:,1:]  # directly convert into numpy and remove the time column
+# get time vector of the signals (same for all) - format: 'YYYY-MM-DD HH:MM:SS'
+time_vector = solar_ts_complete[:,0]
+# %% convert signals to MWh
+solar_fc_MWh = solar_fc * solar_cp
+solar_ts_MWh = solar_ts * solar_cp
+wind_fc_MWh = wind_fc * wind_cp
+wind_ts_MWh = wind_ts * wind_cp
+# %% calculate relative percentage difference (RPD) between forecast and actual
+solar_diff = RPD(solar_fc_MWh, solar_ts_MWh)
+wind_diff = RPD(wind_fc_MWh, wind_ts_MWh)
+# %% plot data for first week of 'node'
+node = 100
+start_time = time_vector[0]
+end_time = time_vector[7*24]
+plot_forecast_actual(solar_fc_MWh, solar_ts_MWh, wind_fc_MWh, wind_ts_MWh, time_vector, start_time, end_time, node)
+# %% plot the average solar and wind power and the average forecasting error
+nb_years = int(solar_ts_MWh.shape[0]/(24*356))
+nb_nodes = solar_ts_MWh.shape[1]
+
+# average solar power
+plt.subplot(221)
+# the time series is too long to average in one go, so first calculate yearly average and then total
+tmp = np.zeros((nb_years, nb_nodes))
+for i in range(nb_years):
+    tmp[i] = np.mean(solar_ts_MWh[i*24*365:(i+1)*24*365], axis=0)
+x = np.mean(tmp, axis=0)
+plot_map(map_img)
+plot_signal_on_graph(lon, lat, x, title='Average solar power [MWh]')
+plot_power_lines(edge_list_lon, edge_list_lat)
+
+# average wind power
+plt.subplot(222)
+tmp = np.zeros((nb_years, nb_nodes))
+for i in range(nb_years):
+    tmp[i] = np.mean(wind_ts_MWh[i*24*365:(i+1)*24*365], axis=0)
+x = np.mean(tmp, axis=0)
+plot_map(map_img)
+plot_signal_on_graph(lon, lat, x, title='Average wind power [MWh]')
+plot_power_lines(edge_list_lon, edge_list_lat)
+
+# average solar forecasting error
+plt.subplot(223)
+tmp = np.zeros((nb_years, nb_nodes))
+for i in range(nb_years):
+    tmp[i] = np.mean(np.abs(solar_diff[i*24*365:(i+1)*24*365]), axis=0)
+x = np.mean(tmp, axis=0)
+plot_map(map_img)
+plot_signal_on_graph(lon, lat, x, title='Average solar forecasting error [MWh]')
+plot_power_lines(edge_list_lon, edge_list_lat)
+
+# average wind forecasting error
+plt.subplot(224)
+tmp = np.zeros((nb_years, nb_nodes))
+for i in range(nb_years):
+    tmp[i] = np.mean(np.abs(wind_diff[i*24*365:(i+1)*24*365]), axis=0)
+x = np.mean(tmp, axis=0)
+plot_map(map_img)
+plot_signal_on_graph(lon, lat, x, title='Average wind forecasting error [MWh]')
+plot_power_lines(edge_list_lon, edge_list_lat)
+plt.show()
+
+
 
