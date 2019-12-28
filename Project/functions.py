@@ -147,6 +147,7 @@ def magnitude_getter(signal):
     year_mag = np.abs(signal_hat[3])
     return half_day_mag, day_mag, week_mag, year_mag
 
+# -----------------------------------------------------------------------------------------------------------------
 
 def plot_map(map_img):
     """
@@ -156,7 +157,8 @@ def plot_map(map_img):
     ax = plt.gca()
     ax.imshow(map_img, extent=[-11.24360789326, 36.967974972, 35.3755584134, 60.2472037266], alpha=0.5)
     
-    
+# -----------------------------------------------------------------------------------------------------------------
+
 def plot_forecast_actual(solar_fc, solar_ts, wind_fc, wind_ts, time_vector, start_time, end_time, node):
     """
     Plots the solar and wind forecast, actual and their difference 
@@ -190,7 +192,9 @@ def plot_forecast_actual(solar_fc, solar_ts, wind_fc, wind_ts, time_vector, star
     ax[1, 1].set_ylabel('%')
     ax[1, 1].set_title(f'Wind difference between forecast and actual')
     plt.show()
-    
+
+# -----------------------------------------------------------------------------------------------------------------
+   
 def RPD(x, y):
     """
     Calculates the signed relative percetage difference between x and y
@@ -207,7 +211,13 @@ def RPD(x, y):
     out[tmp == 1] = 0
     return out
 
-def plot_forecasting_on_graph(solar_fc_MWh, solar_ts_MWh, solar_diff, wind_fc_MWh, wind_ts_MWh, wind_diff, lon, lat, edge_list_lon, edge_list_lat, map_img):
+# -----------------------------------------------------------------------------------------------------------------
+
+def plot_forecasting_on_graph(solar_fc_MWh, solar_ts_MWh, solar_diff, wind_fc_MWh, wind_ts_MWh, 
+                              wind_diff, lon, lat, edge_list_lon, edge_list_lat, map_img):
+    """
+    Plots the forcasted solar and wind powers together with the forcasting error on the graph
+    """
     nb_years = int(solar_ts_MWh.shape[0]/(24*356))
     nb_nodes = solar_ts_MWh.shape[1]
     

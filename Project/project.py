@@ -303,50 +303,7 @@ start_time = time_vector[0]
 end_time = time_vector[7*24]
 plot_forecast_actual(solar_fc_MWh, solar_ts_MWh, wind_fc_MWh, wind_ts_MWh, time_vector, start_time, end_time, node)
 # %% plot the average solar and wind power and the average forecasting error
-nb_years = int(solar_ts_MWh.shape[0]/(24*356))
-nb_nodes = solar_ts_MWh.shape[1]
-
-# average solar power
-plt.subplot(221)
-# the time series is too long to average in one go, so first calculate yearly average and then total
-tmp = np.zeros((nb_years, nb_nodes))
-for i in range(nb_years):
-    tmp[i] = np.mean(solar_ts_MWh[i*24*365:(i+1)*24*365], axis=0)
-x = np.mean(tmp, axis=0)
-plot_map(map_img)
-plot_signal_on_graph(lon, lat, x, title='Average solar power [MWh]')
-plot_power_lines(edge_list_lon, edge_list_lat)
-
-# average wind power
-plt.subplot(222)
-tmp = np.zeros((nb_years, nb_nodes))
-for i in range(nb_years):
-    tmp[i] = np.mean(wind_ts_MWh[i*24*365:(i+1)*24*365], axis=0)
-x = np.mean(tmp, axis=0)
-plot_map(map_img)
-plot_signal_on_graph(lon, lat, x, title='Average wind power [MWh]')
-plot_power_lines(edge_list_lon, edge_list_lat)
-
-# average solar forecasting error
-plt.subplot(223)
-tmp = np.zeros((nb_years, nb_nodes))
-for i in range(nb_years):
-    tmp[i] = np.mean(np.abs(solar_diff[i*24*365:(i+1)*24*365]), axis=0)
-x = np.mean(tmp, axis=0)
-plot_map(map_img)
-plot_signal_on_graph(lon, lat, x, title='Average solar forecasting error [MWh]')
-plot_power_lines(edge_list_lon, edge_list_lat)
-
-# average wind forecasting error
-plt.subplot(224)
-tmp = np.zeros((nb_years, nb_nodes))
-for i in range(nb_years):
-    tmp[i] = np.mean(np.abs(wind_diff[i*24*365:(i+1)*24*365]), axis=0)
-x = np.mean(tmp, axis=0)
-plot_map(map_img)
-plot_signal_on_graph(lon, lat, x, title='Average wind forecasting error [MWh]')
-plot_power_lines(edge_list_lon, edge_list_lat)
-plt.show()
+plot_forecasting_on_graph(solar_fc_MWh, solar_ts_MWh, solar_diff, wind_fc_MWh, wind_ts_MWh, wind_diff, lon, lat, edge_list_lon, edge_list_lat, map_img)
 
 
 
