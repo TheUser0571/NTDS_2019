@@ -30,7 +30,7 @@ nodes.columns
 load_signal.columns
 
 load_signal['1']
-# %% generate graph (there are 969 nodes in total)
+# %% generate graph (there are 1494 nodes in total)
 
 
 graph = nx.Graph()
@@ -120,25 +120,21 @@ if plot_fig is True:
     plt.show()
 
 # %% define and plot load signal
-# extract load signal from start_hour to end_hour
-start_hour = 0
-end_hour = 23
-load_day1 = load_signal.iloc[start_hour:end_hour + 1].to_numpy()[:, 1:]
+load = load_signal.to_numpy()[:, 1:]
 # average the load signals
-mean_load_day1 = np.mean(load_day1, axis=0)
-mean_load_day1 /= np.max(mean_load_day1)
-mean_load_day1 = mean_load_day1.reshape(len(mean_load_day1), -1)
+mean_load = np.mean(load, axis=0)
+mean_load = mean_load.reshape(len(mean_load), -1)
 
 # plot averaged load signal on graph (adjust vlim if necessary, vlim are the clip values of the signal for representation)
 plt.figure()
 plot_map(map_img)
-plot_signal_on_graph(lon, lat, x=mean_load_day1, title='Normalised load over one day', vlim=(0, 0.06))
+plot_signal_on_graph(lon, lat, x=mean_load, title='Average load [MWh]')
 plot_power_lines(edge_list_lon, edge_list_lat)
 plt.show()
 
 # %% plotting spectrum of the average load signal
 plt.figure
-plt.plot(lam, np.abs(GFT(U, mean_load_day1)))
+plt.plot(lam, np.abs(GFT(U, mean_load)))
 plt.xlabel('$\lambda$')
 plt.ylabel('GFT')
 plt.title('Spectrum of the average load signal')
@@ -190,22 +186,22 @@ year[(np.isnan(year))]=0
 plt.figure(figsize=(18, 9))
 plt.subplot(221)
 plot_map(map_img)
-plot_signal_on_graph(lon, lat, x=half_day, title='Fourier component of load time series corresponding to once every half day frequency', vlim=(0, np.max(half_day)))
+plot_signal_on_graph(lon, lat, x=half_day, title='Amplitude of half day frequency')
 plot_power_lines(edge_list_lon, edge_list_lat)
 
 plt.subplot(222)
 plot_map(map_img)
-plot_signal_on_graph(lon, lat, x=day, title='Fourier component of load time series corresponding to once a day frequency', vlim=(0, np.max(day)))
+plot_signal_on_graph(lon, lat, x=day, title='Amplitude of once a day frequency')
 plot_power_lines(edge_list_lon, edge_list_lat)
 
 plt.subplot(223)
 plot_map(map_img)
-plot_signal_on_graph(lon, lat, x=week, title='Fourier component of load time series corresponding to once a week frequency', vlim=(0, np.max(week)))
+plot_signal_on_graph(lon, lat, x=week, title='Amplitude of once a week frequency')
 plot_power_lines(edge_list_lon, edge_list_lat)
 
 plt.subplot(224)
 plot_map(map_img)
-plot_signal_on_graph(lon, lat, x=year, title='Fourier component of load time series corresponding to once a year frequency', vlim=(0, np.max(year)))
+plot_signal_on_graph(lon, lat, x=year, title='Amplitude of once a year frequency')
 plot_power_lines(edge_list_lon, edge_list_lat)
 plt.show()
 
@@ -276,7 +272,7 @@ if run_this_bit is True:
     # save generated data as csv file for fast reloading
     np.savetxt(BASE_PATH + 'solar_fc.csv', solar_fc, delimiter=',')
     np.savetxt(BASE_PATH + 'wind_fc.csv', wind_fc, delimiter=',')
-# %% load forecast data from csv file (run this instead of the above if the csv file is already generated!)
+# %% load forecast data from single csv file (run this instead of the above if the csv file is already generated!)
 solar_fc = np.loadtxt(BASE_PATH + 'solar_fc.csv', delimiter=',')
 wind_fc = np.loadtxt(BASE_PATH + 'wind_fc.csv', delimiter=',')
 # %% load power capacities
@@ -285,8 +281,8 @@ solar_cp = pd.read_csv(BASE_PATH + 'solar_layouts_COSMO.csv').to_numpy()[:,1]
 wind_cp = pd.read_csv(BASE_PATH + 'wind_layouts_COSMO.csv').to_numpy()[:,1]
 # %% load actual data
 solar_ts_complete = pd.read_csv(BASE_PATH + 'solar_signal_COSMO.csv').to_numpy()
-solar_ts = solar_ts_complete[:,1:]
-wind_ts = pd.read_csv(BASE_PATH + 'wind_signal_COSMO.csv').to_numpy()[:,1:]  # directly convert into numpy and remove the time column
+solar_ts = solar_ts_complete[:,1:].astype(float)
+wind_ts = pd.read_csv(BASE_PATH + 'wind_signal_COSMO.csv').to_numpy()[:,1:].astype(float)  # directly convert into numpy and remove the time column
 # get time vector of the signals (same for all) - format: 'YYYY-MM-DD HH:MM:SS'
 time_vector = solar_ts_complete[:,0]
 # %% convert signals to MWh
@@ -302,8 +298,65 @@ node = 100
 start_time = time_vector[0]
 end_time = time_vector[7*24]
 plot_forecast_actual(solar_fc_MWh, solar_ts_MWh, wind_fc_MWh, wind_ts_MWh, time_vector, start_time, end_time, node)
-# %% plot the average solar and wind power and the average forecasting error
+# %% plot the average solar and wind energy and the average forecasting error
 plot_forecasting_on_graph(solar_fc_MWh, solar_ts_MWh, solar_diff, wind_fc_MWh, wind_ts_MWh, wind_diff, lon, lat, edge_list_lon, edge_list_lat, map_img)
+# %% machine learing
+# initialize model
+import torch
+from net import *
 
+#net = NeuralNet(in_size=12, out_size=12)  # simple net
+net = ConvNet()  # conv net
 
+# %% prepare training and test data
+solar_fc_tensor = get_nn_inputs(solar_fc_MWh)
+solar_ts_tensor = get_nn_inputs(solar_ts_MWh)
+wind_fc_tensor = get_nn_inputs(wind_fc_MWh)
+wind_ts_tensor = get_nn_inputs(wind_ts_MWh)
+
+solar_train_feat, solar_train_target, solar_test_feat, solar_test_target = train_test_set(solar_fc_tensor, solar_ts_tensor)
+wind_train_feat, wind_train_target, wind_test_feat, wind_test_target = train_test_set(wind_fc_tensor, wind_ts_tensor)
+
+solar_train_feat_std, mean_solar, std_solar = standardize(solar_train_feat)
+solar_test_feat_std = fit_standardize(solar_test_feat, mean_solar, std_solar)
+wind_train_feat_std, mean_wind, std_wind = standardize(wind_train_feat)
+wind_test_feat_std = fit_standardize(wind_test_feat, mean_wind, std_wind)
+
+# %% for conv model
+solar_train_feat_std = solar_train_feat_std.unsqueeze(1)
+solar_test_feat_std = solar_test_feat_std.unsqueeze(1)
+
+wind_train_feat_std = wind_train_feat_std.unsqueeze(1)
+wind_test_feat_std = wind_test_feat_std.unsqueeze(1)
+
+# %% train the model for solar engergy
+train_loss, test_loss = train(model=net, train_inputs=solar_train_feat_std, train_targets=solar_train_target, 
+                              test_inputs=solar_test_feat_std, test_targets=solar_test_target, n_epoch=50, batch_size=10)
+plt.plot(train_loss)
+# %% test the trained model
+model = torch.load('NeuralNet_solar_cluster_trained.pt')
+pred = retrieve_ts_from_nn_outputs(model(solar_test_feat_std))
+forecast = retrieve_ts_from_nn_outputs(solar_test_feat)
+target = retrieve_ts_from_nn_outputs(solar_test_target)
+plt.plot(pred[7:14*24,1300], label='pred')
+plt.plot(target[7:14*24,1300], label='target')
+plt.plot(forecast[7:14*24,1300], label='forecast')
+plt.legend()
+plt.show()
+
+# %% train the model for wind engergy
+train_loss, test_loss = train(model=net, train_inputs=wind_train_feat_std, train_targets=wind_train_target, 
+                              test_inputs=wind_test_feat_std, test_targets=wind_test_target, n_epoch=50, batch_size=10)
+plt.plot(train_loss, label='train_loss')
+plt.plot(test_loss, label='test_loss')
+# %% test the trained model
+model = torch.load('NeuralNet_wind_cluster_trained.pt')
+pred = retrieve_ts_from_nn_outputs(model(wind_test_feat_std))
+forecast = retrieve_ts_from_nn_outputs(wind_test_feat)
+target = retrieve_ts_from_nn_outputs(wind_test_target)
+plt.plot(pred[7:14*24,1305], label='pred')
+plt.plot(target[7:14*24,1305], label='target')
+plt.plot(forecast[7:14*24,1305], label='forecast')
+plt.legend()
+plt.show()
 
