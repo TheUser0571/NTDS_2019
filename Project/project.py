@@ -254,7 +254,7 @@ plot_power_lines(edge_list_lon, edge_list_lat)
 plot_map(map_img)
 plot_generator(geny)
 
-# %% load forcast data (only run this if really necessary - it takes for ever)
+# %% load forecast data (only run this if really necessary - it takes for ever)
 run_this_bit = False  # set true if you need to generate the csv file again
 if run_this_bit is True:
     # get list of all 2192 folders containing the forcast data
