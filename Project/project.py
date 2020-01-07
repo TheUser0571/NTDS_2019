@@ -307,7 +307,7 @@ plot_forecast_actual(solar_fc_MWh, solar_ts_MWh, wind_fc_MWh, wind_ts_MWh, time_
 # %% plot the average solar and wind energy and the average forecasting error
 plot_forecasting_on_graph(solar_fc_MWh, solar_ts_MWh, solar_diff, wind_fc_MWh, wind_ts_MWh, wind_diff, lon, lat,
                           edge_list_lon, edge_list_lat, map_img)
-# %% machine learing
+# %% machine learning
 # initialize model
 import torch
 from net import *
