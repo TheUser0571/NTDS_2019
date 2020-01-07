@@ -8,11 +8,12 @@ from functions import *
 import networkx as nx
 import matplotlib
 import matplotlib.image as mpimg
+import geopy.distance # conda install -c conda-forge geopy
 
 # %%
-#BASE_PATH = 'P:/Python/Network_tour/Data_for_project/'  # adjust if necessary
+BASE_PATH = 'P:/Python/Network_tour/Data_for_project/'  # adjust if necessary
 
-BASE_PATH = 'C:/Users/kay-1/Documents/NTDS_data/'  # Kay's path ;)
+# BASE_PATH = 'C:/Users/kay-1/Documents/NTDS_data/'  # Kay's path ;)
 
 edges = pd.read_csv(BASE_PATH + 'edges.csv')
 nodes = pd.read_csv(BASE_PATH + 'nodes.csv')
@@ -145,15 +146,16 @@ print(f'Clustering coefficient: {clustering_coeff}')
 
 # %% fourier transform of time series
 load_node = load_signal.to_numpy()[:, 4].astype(float)
-n_sample=len(load_node)
+n_sample = len(load_node)
 x = np.arange(n_sample)
-sampling_frequency = 1 # because we sample once an hour -> 24 times a day
+sampling_frequency = 1  # because we sample once an hour -> 24 times a day
 load_node_hat = np.fft.fft(load_node)
-f = np.arange(0, len(load_node_hat) // 2, 1) * sampling_frequency / n_sample # frequencies for the x axis
+f = np.arange(0, len(load_node_hat) // 2, 1) * sampling_frequency / n_sample  # frequencies for the x axis
 plt.figure(1)
 ax = plt.gca()
 ax.plot(f, np.abs(load_node_hat)[:len(load_node) // 2], c='red')
-ax.scatter([1/(365*24), 1/(7*24), 1/24,1/12], [100000, 100000, 100000,100000], c='green', marker='o') # plotting green points at frequencies of 1 day, 1 week and 1 year arbitrary height
+ax.scatter([1 / (365 * 24), 1 / (7 * 24), 1 / 24, 1 / 12], [100000, 100000, 100000, 100000], c='green',
+           marker='o')  # plotting green points at frequencies of 1 day, 1 week and 1 year arbitrary height
 plt.show()
 print(np.sum(np.abs(load_node_hat)))
 
@@ -161,25 +163,26 @@ print(np.sum(np.abs(load_node_hat)))
 # creat signals on graph called day, week, year which are the frequency magnitudes of the Fourier decomposition
 import importlib
 import functions
+
 importlib.reload(functions)
 
-numpy_load_signal=load_signal.to_numpy()[:,1:].astype(float)
-half_day=np.zeros((numpy_load_signal.shape[1],1))
-day=np.zeros((numpy_load_signal.shape[1],1))
-week=np.zeros((numpy_load_signal.shape[1],1))
-year=np.zeros((numpy_load_signal.shape[1],1))
+numpy_load_signal = load_signal.to_numpy()[:, 1:].astype(float)
+half_day = np.zeros((numpy_load_signal.shape[1], 1))
+day = np.zeros((numpy_load_signal.shape[1], 1))
+week = np.zeros((numpy_load_signal.shape[1], 1))
+year = np.zeros((numpy_load_signal.shape[1], 1))
 for i in range(numpy_load_signal.shape[1]):
     load_node = numpy_load_signal[:, i]
-    temp_half_day, temp_day, temp_week, temp_year=functions.magnitude_getter(load_node)
-    half_day[i]=temp_half_day
-    day[i]=temp_day
-    week[i]=temp_week
-    year[i]=temp_year
+    temp_half_day, temp_day, temp_week, temp_year = functions.magnitude_getter(load_node)
+    half_day[i] = temp_half_day
+    day[i] = temp_day
+    week[i] = temp_week
+    year[i] = temp_year
 
-half_day[(np.isnan(half_day))]=0
-day[(np.isnan(day))]=0
-week[(np.isnan(week))]=0
-year[(np.isnan(year))]=0
+half_day[(np.isnan(half_day))] = 0
+day[(np.isnan(day))] = 0
+week[(np.isnan(week))] = 0
+year[(np.isnan(year))] = 0
 # %%
 # plotting day, week and year signals on graph
 
@@ -207,12 +210,11 @@ plt.show()
 
 # %%
 # generator graph (the IDs of the generators do not correspond to the IDs of the nodes.
-geny=generator.to_numpy()
-nod=nodes.to_numpy()
-print(np.max(geny[:,0]))
-print(geny[np.argmin(geny[:,0]),0:3])
-nod[0:130,0:3]
-
+geny = generator.to_numpy()
+nod = nodes.to_numpy()
+print(np.max(geny[:, 0]))
+print(geny[np.argmin(geny[:, 0]), 0:3])
+nod[0:130, 0:3]
 
 # %%
 graph_generator = nx.Graph()
@@ -233,22 +235,25 @@ plt.figure(1)
 
 
 def plot_generator(geny):
-
-    types = np.unique(geny[:,7])
-    colours = matplotlib.colors.ListedColormap(['k', 'b', 'y', 'g', 'r', 'chocolate', 'magenta', 'cyan', 'indigo'])
+    types = np.unique(geny[:, 7])
+    colours = matplotlib.colors.ListedColormap(['k', 'b', 'r', 'y', 'g', 'magenta', 'chocolate', 'cyan', 'indigo'])
     generator_type = dict(zip(types, np.arange(10)))
-    sizes = (geny[:, 9]/10)
+    sizes = (geny[:, 9] / 20)
     node_list = geny[:, 0]
     fig = plt.gcf()
     ax = plt.gca()
-    scatter = ax.scatter(geny[:, 5], geny[:, 4], c=list(map(generator_type.get, geny[:,7])), cmap=colours, s=list(sizes))
-    legend1 = plt.legend(handles=scatter.legend_elements()[0], labels=list(types) ,title="Fuel type")
+    scatter = ax.scatter(geny[:, 5], geny[:, 4], c=list(map(generator_type.get, geny[:, 7])), cmap=colours,
+                         s=list(sizes))
+    legend1 = plt.legend(handles=scatter.legend_elements()[0], labels=list(types), title="Fuel type")
     ax.add_artist(legend1)
     plt.show()
 
+
+plt.figure()
+plot_power_lines(edge_list_lon, edge_list_lat)
 plot_map(map_img)
 plot_generator(geny)
-#plot_power_lines(edge_list_lon, edge_list_lat)
+
 # %% load forcast data (only run this if really necessary - it takes for ever)
 run_this_bit = False  # set true if you need to generate the csv file again
 if run_this_bit is True:
@@ -258,9 +263,9 @@ if run_this_bit is True:
     # extract the forecast data from all folders
     for i, base in enumerate(folders):
         # get the first 12h of every forecast
-        tmp_solar_fc = pd.read_csv(base + '/solar_forecast.csv').to_numpy()[:12,1:]
-        tmp_wind_fc = pd.read_csv(base + '/wind_forecast.csv').to_numpy()[:12,1:]
-        print(f'running... {np.round(i/len(folders)*100, decimals=2)}%')
+        tmp_solar_fc = pd.read_csv(base + '/solar_forecast.csv').to_numpy()[:12, 1:]
+        tmp_wind_fc = pd.read_csv(base + '/wind_forecast.csv').to_numpy()[:12, 1:]
+        print(f'running... {np.round(i / len(folders) * 100, decimals=2)}%')
         # stack them on top of each other
         if i == 0:
             solar_fc = tmp_solar_fc
@@ -277,14 +282,15 @@ solar_fc = np.loadtxt(BASE_PATH + 'solar_fc.csv', delimiter=',')
 wind_fc = np.loadtxt(BASE_PATH + 'wind_fc.csv', delimiter=',')
 # %% load power capacities
 # directly convert to numpy and extract the proportional capacities
-solar_cp = pd.read_csv(BASE_PATH + 'solar_layouts_COSMO.csv').to_numpy()[:,1]
-wind_cp = pd.read_csv(BASE_PATH + 'wind_layouts_COSMO.csv').to_numpy()[:,1]
+solar_cp = pd.read_csv(BASE_PATH + 'solar_layouts_COSMO.csv').to_numpy()[:, 1]
+wind_cp = pd.read_csv(BASE_PATH + 'wind_layouts_COSMO.csv').to_numpy()[:, 1]
 # %% load actual data
 solar_ts_complete = pd.read_csv(BASE_PATH + 'solar_signal_COSMO.csv').to_numpy()
-solar_ts = solar_ts_complete[:,1:].astype(float)
-wind_ts = pd.read_csv(BASE_PATH + 'wind_signal_COSMO.csv').to_numpy()[:,1:].astype(float)  # directly convert into numpy and remove the time column
+solar_ts = solar_ts_complete[:, 1:].astype(float)
+wind_ts = pd.read_csv(BASE_PATH + 'wind_signal_COSMO.csv').to_numpy()[:, 1:].astype(
+    float)  # directly convert into numpy and remove the time column
 # get time vector of the signals (same for all) - format: 'YYYY-MM-DD HH:MM:SS'
-time_vector = solar_ts_complete[:,0]
+time_vector = solar_ts_complete[:, 0]
 # %% convert signals to MWh
 solar_fc_MWh = solar_fc * solar_cp
 solar_ts_MWh = solar_ts * solar_cp
@@ -296,16 +302,17 @@ wind_diff = RPD(wind_fc_MWh, wind_ts_MWh)
 # %% plot data for first week of 'node'
 node = 100
 start_time = time_vector[0]
-end_time = time_vector[7*24]
+end_time = time_vector[7 * 24]
 plot_forecast_actual(solar_fc_MWh, solar_ts_MWh, wind_fc_MWh, wind_ts_MWh, time_vector, start_time, end_time, node)
 # %% plot the average solar and wind energy and the average forecasting error
-plot_forecasting_on_graph(solar_fc_MWh, solar_ts_MWh, solar_diff, wind_fc_MWh, wind_ts_MWh, wind_diff, lon, lat, edge_list_lon, edge_list_lat, map_img)
+plot_forecasting_on_graph(solar_fc_MWh, solar_ts_MWh, solar_diff, wind_fc_MWh, wind_ts_MWh, wind_diff, lon, lat,
+                          edge_list_lon, edge_list_lat, map_img)
 # %% machine learing
 # initialize model
 import torch
 from net import *
 
-#net = NeuralNet(in_size=12, out_size=12)  # simple net
+# net = NeuralNet(in_size=12, out_size=12)  # simple net
 net = ConvNet()  # conv net
 
 # %% prepare training and test data
@@ -314,7 +321,8 @@ solar_ts_tensor = get_nn_inputs(solar_ts_MWh)
 wind_fc_tensor = get_nn_inputs(wind_fc_MWh)
 wind_ts_tensor = get_nn_inputs(wind_ts_MWh)
 
-solar_train_feat, solar_train_target, solar_test_feat, solar_test_target = train_test_set(solar_fc_tensor, solar_ts_tensor)
+solar_train_feat, solar_train_target, solar_test_feat, solar_test_target = train_test_set(solar_fc_tensor,
+                                                                                          solar_ts_tensor)
 wind_train_feat, wind_train_target, wind_test_feat, wind_test_target = train_test_set(wind_fc_tensor, wind_ts_tensor)
 
 solar_train_feat_std, mean_solar, std_solar = standardize(solar_train_feat)
@@ -330,22 +338,23 @@ wind_train_feat_std = wind_train_feat_std.unsqueeze(1)
 wind_test_feat_std = wind_test_feat_std.unsqueeze(1)
 
 # %% train the model for solar engergy
-train_loss, test_loss = train(model=net, train_inputs=solar_train_feat_std, train_targets=solar_train_target, 
-                              test_inputs=solar_test_feat_std, test_targets=solar_test_target, n_epoch=50, batch_size=10)
+train_loss, test_loss = train(model=net, train_inputs=solar_train_feat_std, train_targets=solar_train_target,
+                              test_inputs=solar_test_feat_std, test_targets=solar_test_target, n_epoch=50,
+                              batch_size=10)
 plt.plot(train_loss)
 # %% test the trained model
 model = torch.load('NeuralNet_solar_cluster_trained.pt')
 pred = retrieve_ts_from_nn_outputs(model(solar_test_feat_std))
 forecast = retrieve_ts_from_nn_outputs(solar_test_feat)
 target = retrieve_ts_from_nn_outputs(solar_test_target)
-plt.plot(pred[7:14*24,1300], label='pred')
-plt.plot(target[7:14*24,1300], label='target')
-plt.plot(forecast[7:14*24,1300], label='forecast')
+plt.plot(pred[7:14 * 24, 1300], label='pred')
+plt.plot(target[7:14 * 24, 1300], label='target')
+plt.plot(forecast[7:14 * 24, 1300], label='forecast')
 plt.legend()
 plt.show()
 
 # %% train the model for wind engergy
-train_loss, test_loss = train(model=net, train_inputs=wind_train_feat_std, train_targets=wind_train_target, 
+train_loss, test_loss = train(model=net, train_inputs=wind_train_feat_std, train_targets=wind_train_target,
                               test_inputs=wind_test_feat_std, test_targets=wind_test_target, n_epoch=50, batch_size=10)
 plt.plot(train_loss, label='train_loss')
 plt.plot(test_loss, label='test_loss')
@@ -354,9 +363,33 @@ model = torch.load('NeuralNet_wind_cluster_trained.pt')
 pred = retrieve_ts_from_nn_outputs(model(wind_test_feat_std))
 forecast = retrieve_ts_from_nn_outputs(wind_test_feat)
 target = retrieve_ts_from_nn_outputs(wind_test_target)
-plt.plot(pred[7:14*24,1305], label='pred')
-plt.plot(target[7:14*24,1305], label='target')
-plt.plot(forecast[7:14*24,1305], label='forecast')
+plt.plot(pred[7:14 * 24, 1305], label='pred')
+plt.plot(target[7:14 * 24, 1305], label='target')
+plt.plot(forecast[7:14 * 24, 1305], label='forecast')
 plt.legend()
 plt.show()
+
+# %% distance between two closest and furthest nodes
+latitudes = nodes['latitude'].to_numpy()
+longitudes = nodes['longitude'].to_numpy()
+positions = np.concatenate((longitudes[:, np.newaxis], latitudes[:, np.newaxis]), axis=1)
+earth_radius = 6367449  # in meters
+shortest_dist = 1e9
+largest_dist = 0
+# %% takes a long time
+for num,i in enumerate(positions):
+    if num % 10 == 0:
+        print(num)
+    for j in positions[num+1:,:]:
+        if not (i == j).all():
+            dist= geopy.distance.distance(i, j).km
+            if dist < shortest_dist:
+                shortest_dist = dist
+            if dist > largest_dist:
+                largest_dist = dist
+# shortest_dist = 0.26449321005593207
+# largest_dist = 4283.281141199654
+
+# %%
+
 
