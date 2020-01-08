@@ -8,6 +8,8 @@ from functions import *
 import networkx as nx
 import matplotlib
 import matplotlib.image as mpimg
+import torch
+from net import *
 
 # %%
 #BASE_PATH = 'P:/Python/Network_tour/Data_for_project/'  # adjust if necessary
@@ -302,17 +304,25 @@ plot_forecast_actual(solar_fc_MWh, solar_ts_MWh, wind_fc_MWh, wind_ts_MWh, time_
 plot_forecasting_on_graph(solar_fc_MWh, solar_ts_MWh, solar_diff, wind_fc_MWh, wind_ts_MWh, wind_diff, lon, lat, edge_list_lon, edge_list_lat, map_img)
 # %% machine learing
 # initialize model
-import torch
-from net import *
 
 #net = NeuralNet(in_size=12, out_size=12)  # simple net
-net = ConvNet()  # conv net
+#net = ConvNet()  # conv net
+net = GCN(adjacency, np.diag(np.ravel(np.sum(adjacency, axis=1))))
+
+# get name of the net used
+model_name = net.__class__.__name__
 
 # %% prepare training and test data
-solar_fc_tensor = get_nn_inputs(solar_fc_MWh)
-solar_ts_tensor = get_nn_inputs(solar_ts_MWh)
-wind_fc_tensor = get_nn_inputs(wind_fc_MWh)
-wind_ts_tensor = get_nn_inputs(wind_ts_MWh)
+if model_name != 'GCN':
+    solar_fc_tensor = get_nn_inputs(solar_fc_MWh)
+    solar_ts_tensor = get_nn_inputs(solar_ts_MWh)
+    wind_fc_tensor = get_nn_inputs(wind_fc_MWh)
+    wind_ts_tensor = get_nn_inputs(wind_ts_MWh)
+else:
+    solar_fc_tensor = torch.Tensor(solar_fc_MWh)
+    solar_ts_tensor = torch.Tensor(solar_fc_MWh)
+    wind_fc_tensor = torch.Tensor(wind_fc_MWh)
+    wind_ts_tensor = torch.Tensor(wind_fc_MWh)
 
 solar_train_feat, solar_train_target, solar_test_feat, solar_test_target = train_test_set(solar_fc_tensor, solar_ts_tensor)
 wind_train_feat, wind_train_target, wind_test_feat, wind_test_target = train_test_set(wind_fc_tensor, wind_ts_tensor)
@@ -323,40 +333,122 @@ wind_train_feat_std, mean_wind, std_wind = standardize(wind_train_feat)
 wind_test_feat_std = fit_standardize(wind_test_feat, mean_wind, std_wind)
 
 # %% for conv model
-solar_train_feat_std = solar_train_feat_std.unsqueeze(1)
-solar_test_feat_std = solar_test_feat_std.unsqueeze(1)
+if model_name == 'ConvNet':
+    solar_train_feat_std = solar_train_feat_std.unsqueeze(1)
+    solar_test_feat_std = solar_test_feat_std.unsqueeze(1)
+    
+    wind_train_feat_std = wind_train_feat_std.unsqueeze(1)
+    wind_test_feat_std = wind_test_feat_std.unsqueeze(1)
 
-wind_train_feat_std = wind_train_feat_std.unsqueeze(1)
-wind_test_feat_std = wind_test_feat_std.unsqueeze(1)
-
-# %% train the model for solar engergy
+# %% train the model for solar engergy (only do with small amount of data)
 train_loss, test_loss = train(model=net, train_inputs=solar_train_feat_std, train_targets=solar_train_target, 
-                              test_inputs=solar_test_feat_std, test_targets=solar_test_target, n_epoch=50, batch_size=10)
-plt.plot(train_loss)
-# %% test the trained model
-model = torch.load('NeuralNet_solar_cluster_trained.pt')
-pred = retrieve_ts_from_nn_outputs(model(solar_test_feat_std))
-forecast = retrieve_ts_from_nn_outputs(solar_test_feat)
-target = retrieve_ts_from_nn_outputs(solar_test_target)
-plt.plot(pred[7:14*24,1300], label='pred')
-plt.plot(target[7:14*24,1300], label='target')
-plt.plot(forecast[7:14*24,1300], label='forecast')
-plt.legend()
-plt.show()
-
-# %% train the model for wind engergy
-train_loss, test_loss = train(model=net, train_inputs=wind_train_feat_std, train_targets=wind_train_target, 
-                              test_inputs=wind_test_feat_std, test_targets=wind_test_target, n_epoch=50, batch_size=10)
+                              test_inputs=solar_test_feat_std, test_targets=solar_test_target, n_epoch=50, batch_size=15)
 plt.plot(train_loss, label='train_loss')
 plt.plot(test_loss, label='test_loss')
 # %% test the trained model
-model = torch.load('NeuralNet_wind_cluster_trained.pt')
-pred = retrieve_ts_from_nn_outputs(model(wind_test_feat_std))
-forecast = retrieve_ts_from_nn_outputs(wind_test_feat)
-target = retrieve_ts_from_nn_outputs(wind_test_target)
-plt.plot(pred[7:14*24,1305], label='pred')
-plt.plot(target[7:14*24,1305], label='target')
-plt.plot(forecast[7:14*24,1305], label='forecast')
+node = 1000
+start_h = 5000
+duration_h = 5*24
+
+
+model_wind = torch.load('NeuralNet_trained_GCN_wind.pt')
+
+model_solar = torch.load('NeuralNet_trained_GCN_solar.pt')
+    
+    
+if model.__class__.__name__ != 'GCN':
+    pred = retrieve_ts_from_nn_outputs(model(solar_test_feat_std))
+    forecast = retrieve_ts_from_nn_outputs(solar_test_feat)
+    target = retrieve_ts_from_nn_outputs(solar_test_target)
+    plt.plot(pred[7:14*24,1300], label='pred')
+    plt.plot(target[7:14*24,1300], label='target')
+    plt.plot(forecast[7:14*24,1300], label='forecast')
+    plt.legend()
+    plt.show()
+else:
+    plt.subplot(221)
+    x = wind_test_feat_std.clone()
+    forecast = wind_test_target.detach().numpy()
+
+    pred = model_wind(x).detach().numpy()
+    plt.plot(pred[start_h:start_h+duration_h,node], label='pred')
+    plt.plot(forecast[start_h:start_h+duration_h,node], label='forecast')
+    plt.legend()
+    plt.title(f'Wind Forecast Prediction of Node {node} from {time_vector[start_h]} to {time_vector[start_h+duration_h]}')
+    plt.xlabel('Time [h]')
+    plt.ylabel('MWh')
+    plt.show()
+    
+    plt.subplot(223)
+    rpd_wind = np.abs(RPD(pred, forecast))
+    plt.plot(rpd_wind[start_h:start_h+duration_h,node], label='RPD')
+    plt.plot(np.full(rpd_wind[start_h:start_h+duration_h,node].shape, np.mean(rpd_wind[start_h:start_h+duration_h,node])), label='Mean')
+    plt.legend()
+    plt.title('Relative Percentage Difference of Wind Forecast Prediction')
+    plt.xlabel('Time [h]')
+    plt.ylabel('%')
+    
+    plt.subplot(222)
+    x = solar_test_feat_std.clone()
+    forecast = solar_test_target.detach().numpy()
+
+    pred = model_solar(x).detach().numpy()
+    plt.plot(pred[start_h:start_h+duration_h,node], label='pred')
+    plt.plot(forecast[start_h:start_h+duration_h,node], label='forecast')
+    plt.legend()
+    plt.title(f'Solar Forecast Prediction of Node {node} from {time_vector[start_h]} to {time_vector[start_h+duration_h]}')
+    plt.xlabel('Time [h]')
+    plt.ylabel('MWh')
+    plt.show()
+    
+    plt.subplot(224)
+    rpd_solar = np.abs(RPD(pred, forecast))
+    rpd_solar[rpd_solar == 200] = 0 # removing night error (not interesting)
+    plt.plot(rpd_solar[start_h:start_h+duration_h,node], label='RPD')
+    plt.plot(np.full(rpd_solar[start_h:start_h+duration_h,node].shape, np.mean(rpd_solar[start_h:start_h+duration_h,node])), label='Mean')
+    plt.legend()
+    plt.title('Relative Percentage Difference of Solar Forecast Prediction')
+    plt.xlabel('Time [h]')
+    plt.ylabel('%')
+    plt.show()
+
+# %% analyze forecasting prediction on the graph
+rpd_solar_avg = np.mean(rpd_solar, axis=0)
+rpd_wind_avg = np.mean(rpd_wind, axis=0)
+
+plt.figure()
+plot_map(map_img)
+plot_signal_on_graph(lon, lat, rpd_solar_avg, title='Average Solar Forecasting Prediction Error [%]')
+plot_power_lines(edge_list_lon, edge_list_lat)
+plt.show()
+
+plt.figure()
+plot_map(map_img)
+plot_signal_on_graph(lon, lat, rpd_wind_avg, title='Average Wind Forecasting Prediction Error [%]')
+plot_power_lines(edge_list_lon, edge_list_lat)
+plt.show()
+
+# %% analize forecasting prediction vs node degree
+plt.subplot(121)
+plt.title('Average Solar Forecasting Prediction Error vs Node Degree')
+x = np.ravel(degrees)
+p = np.polyfit(x, rpd_solar_avg, 1)
+plt.scatter(x, rpd_solar_avg)
+y = np.append(degrees, np.ones(degrees.shape), axis=1).dot(p)
+plt.plot(x, np.ravel(y), 'r', label='Linear fit')
+plt.xlabel('degree')
+plt.ylabel('Error [%]')
+plt.legend()
+plt.subplot(122)
+plt.title('Average Wind Forecasting Prediction Error vs Node Degree')
+p = np.polyfit(x, rpd_wind_avg, 1)
+plt.scatter(x, rpd_wind_avg)
+y = np.append(degrees, np.ones(degrees.shape), axis=1).dot(p)
+plt.plot(x, np.ravel(y), 'r', label='Linear fit')
+plt.xlabel('degree')
+plt.ylabel('Error [%]')
 plt.legend()
 plt.show()
 
+    
+    

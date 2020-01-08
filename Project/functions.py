@@ -200,7 +200,7 @@ def plot_forecast_actual(solar_fc, solar_ts, wind_fc, wind_ts, time_vector, star
    
 def RPD(x, y):
     """
-    Calculates the signed relative percetage difference between x and y
+    Calculates the signed relative percetage difference between prediction x and target y
     if x is bigger than y, the RPD is positive
     if x is smaller than y, the RPD is negative
     """
@@ -367,7 +367,7 @@ def batch_iter(y, tx, batch_size, num_batches=1, shuffle=True):
 def train(model, train_inputs, train_targets, test_inputs, test_targets, n_epoch=50, batch_size=10):
     model.reset_parameters()
     loss_fn = nn.MSELoss()
-    optimizer = optim.Adam(params=model.parameters(), lr=0.01)
+    optimizer = optim.Adam(params=model.parameters(), lr=0.05)
     
     train_losses = []
     test_losses = []
@@ -420,3 +420,8 @@ def train(model, train_inputs, train_targets, test_inputs, test_targets, n_epoch
     print('Saving losses... Done!')
     
     return train_losses, test_losses
+
+                
+            
+    
+    

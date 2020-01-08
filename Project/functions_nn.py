@@ -9,6 +9,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import logging
+
+
 
 def get_nn_inputs(x):
     """
@@ -109,12 +112,12 @@ def batch_iter(y, tx, batch_size, num_batches=1, shuffle=True):
 def train(model, train_inputs, train_targets, test_inputs, test_targets, n_epoch=50, batch_size=10):
     model.reset_parameters()
     loss_fn = nn.MSELoss()
-    optimizer = optim.Adam(params=model.parameters(), lr=0.01)
+    optimizer = optim.Adam(params=model.parameters(), lr=0.05)
     
     train_losses = []
     test_losses = []
 
-    print('Training Start')
+    logging.debug('Training Start')
     for epoch in range(n_epoch):
         running_loss = 0
         for batch_labels, batch_inputs in batch_iter(train_targets, train_inputs, batch_size=batch_size,
@@ -145,20 +148,20 @@ def train(model, train_inputs, train_targets, test_inputs, test_targets, n_epoch
         train_losses.append(epoch_loss)
         test_losses.append(running_loss)
     
-        # print statistics
-        print(f'epoch: {epoch}, train loss: {epoch_loss}, test loss: {test_loss.item()}')
-    print('Training finished!')
+        # logging.debug statistics
+        logging.debug(f'epoch: {epoch}, train loss: {epoch_loss}, test loss: {test_loss.item()}')
+    logging.debug('Training finished!')
     ## ------------------------------------------------------------------------------------
     ## Saving the trained model to file----------------------------------------------------
     PATH = f'NeuralNet_trained.pt'
-    print('Saving trained model to ' + PATH + '... ')
+    logging.debug('Saving trained model to ' + PATH + '... ')
     torch.save(model, PATH)
-    print('Saving trained model to ' + PATH + '... Done!')
+    logging.debug('Saving trained model to ' + PATH + '... Done!')
     
     ## save losses
-    print('Saving losses... ')
+    logging.debug('Saving losses... ')
     np.savetxt(f'train_loss.txt', train_losses)
     np.savetxt(f'test_loss.txt', test_losses)
-    print('Saving losses... Done!')
+    logging.debug('Saving losses... Done!')
     
     return train_losses, test_losses

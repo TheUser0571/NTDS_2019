@@ -55,4 +55,34 @@ class ConvNet(nn.Module):
         self.fc1.reset_parameters()
         self.fc2.reset_parameters()
     
+
+class GCN(nn.Module):
+    def __init__(self, A, D):
+        super(GCN, self).__init__()
+        self.A = torch.cat((torch.Tensor(A), torch.ones(A.shape[0], 1)), dim=1)
+        self.D = torch.Tensor(np.diag(np.diag(D)**-1))
+        self.W1 = nn.Parameter(torch.rand(self.A.shape))
+        self.W2 = nn.Parameter(torch.rand(self.A.shape))
+        self.W3 = nn.Parameter(torch.rand(self.A.shape))
+        
+    def forward(self, X):
+        X = X.T
+        X = torch.cat((torch.Tensor(X), torch.ones(1, X.shape[1])), dim = 0) # adding bias node
+        X = self.D.mm(self.A*self.W1).mm(X)
+        X = torch.cat((torch.Tensor(X), torch.ones(1, X.shape[1])), dim = 0) # adding bias node
+        X = self.D.mm(self.A*self.W2).mm(X)
+        X = torch.cat((torch.Tensor(X), torch.ones(1, X.shape[1])), dim = 0) # adding bias node
+        X = self.D.mm(self.A*self.W3).mm(X)
+        return X.T
+    def reset_parameters(self):
+        self.W1 = nn.Parameter(torch.rand(self.A.shape))
+        self.W2 = nn.Parameter(torch.rand(self.A.shape))
+        self.W3 = nn.Parameter(torch.rand(self.A.shape))
+        
+        
     
+        
+        
+        
+        
+        

@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --nodes 1
 #SBATCH --ntasks 1
-#SBATCH --cpus-per-task 14
+#SBATCH --cpus-per-task 28
 #SBATCH --mem 64G
 #SBATCH --time 2-1
 echo STARTING AT `date`
@@ -25,8 +25,8 @@ python trainNeuralNet.py >> ../../scratch/laechler/NTDS/nn_training.log
 echo Finished running python code at `date`
 
 echo Start copying stuff at `date`
-rsync -a *.pt ../../scratch/laechler/NTDS/
-rsync -a *.txt ../../scratch/laechler/NTDS/
+rsync -a *.pt ../../scratch/laechler/NTDS/wind
+rsync -a *.txt ../../scratch/laechler/NTDS/wind
 echo Finished copying final stuff into scratch at `date`
 
 exit
