@@ -82,9 +82,9 @@ def plot_signal_on_graph(lon, lat, x=None, title='', vlim=None):
         x = np.ravel(x)
     if vlim is None:
         if x is None:
-            vlim=[0,0]
+            vlim = [0, 0]
         else:
-            vlim=[np.percentile(x, 10), np.percentile(x, 90)]
+            vlim = [np.percentile(x, 10), np.percentile(x, 90)]
     p = ax.scatter(lon, lat, c=x, marker='o',
                    s=7, cmap='RdBu_r', vmin=vlim[0], vmax=vlim[1])
     ax.dist = 7
@@ -131,8 +131,8 @@ def magnitude_getter(signal):
     # n_sample = len(signal)
     # sampling_frequency = 1  # because we sample once an hour -> 24 times a day
     signal_hat = np.fft.fft(signal)
-    sum=np.sum(np.abs(signal_hat))
-    signal_hat = signal_hat/sum # normalization to be able to compare different nodes
+    sum = np.sum(np.abs(signal_hat))
+    signal_hat = signal_hat / sum  # normalization to be able to compare different nodes
     # f = np.arange(0, len(signal_hat) // 2, 1) * sampling_frequency / n_sample  # frequencies for the x axis
     # temp_day= np.abs(f - 1 / 24)
     # temp_week= np.abs(f- 1/(7*24))
@@ -144,11 +144,12 @@ def magnitude_getter(signal):
     # day_mag = np.abs(signal_hat[index_day-3:index_day+4])
     # week_mag = np.abs(signal_hat[index_week-3:index_week+4])
     # year_mag = np.abs(signal_hat[index_year-3:index_year+4])
-    half_day_mag=np.abs(signal_hat[2192])
+    half_day_mag = np.abs(signal_hat[2192])
     day_mag = np.abs(signal_hat[1096])
     week_mag = np.abs(signal_hat[157])
     year_mag = np.abs(signal_hat[3])
     return half_day_mag, day_mag, week_mag, year_mag
+
 
 # -----------------------------------------------------------------------------------------------------------------
 
@@ -159,7 +160,8 @@ def plot_map(map_img):
     fig = plt.gcf()
     ax = plt.gca()
     ax.imshow(map_img, extent=[-11.24360789326, 36.967974972, 35.3755584134, 60.2472037266], alpha=0.5)
-    
+
+
 # -----------------------------------------------------------------------------------------------------------------
 
 def plot_forecast_actual(solar_fc, solar_ts, wind_fc, wind_ts, time_vector, start_time, end_time, node):
@@ -167,8 +169,8 @@ def plot_forecast_actual(solar_fc, solar_ts, wind_fc, wind_ts, time_vector, star
     Plots the solar and wind forecast, actual and their difference 
     for 'node' from 'start_time' to 'end_time'
     """
-    start_idx = int(np.where(time_vector==start_time)[0])
-    end_idx = int(np.where(time_vector==end_time)[0])
+    start_idx = int(np.where(time_vector == start_time)[0])
+    end_idx = int(np.where(time_vector == end_time)[0])
     solar_diff = RPD(solar_fc, solar_ts)
     wind_diff = RPD(wind_fc, wind_ts)
     fig, ax = plt.subplots(nrows=2, ncols=2)
@@ -196,8 +198,9 @@ def plot_forecast_actual(solar_fc, solar_ts, wind_fc, wind_ts, time_vector, star
     ax[1, 1].set_title(f'Wind difference between forecast and actual')
     plt.show()
 
+
 # -----------------------------------------------------------------------------------------------------------------
-   
+
 def RPD(x, y):
     """
     Calculates the signed relative percetage difference between prediction x and target y
@@ -214,58 +217,60 @@ def RPD(x, y):
     out[tmp == 1] = 0
     return out
 
+
 # -----------------------------------------------------------------------------------------------------------------
 
-def plot_forecasting_on_graph(solar_fc_MWh, solar_ts_MWh, solar_diff, wind_fc_MWh, wind_ts_MWh, 
+def plot_forecasting_on_graph(solar_fc_MWh, solar_ts_MWh, solar_diff, wind_fc_MWh, wind_ts_MWh,
                               wind_diff, lon, lat, edge_list_lon, edge_list_lat, map_img):
     """
     Plots the forcasted solar and wind powers together with the forcasting error on the graph
     """
-    nb_years = int(solar_ts_MWh.shape[0]/(24*356))
+    nb_years = int(solar_ts_MWh.shape[0] / (24 * 356))
     nb_nodes = solar_ts_MWh.shape[1]
-    
+
     # average solar power
     plt.subplot(221)
     # the time series is too long to average in one go, so first calculate yearly average and then total
     tmp = np.zeros((nb_years, nb_nodes))
     for i in range(nb_years):
-        tmp[i] = np.mean(solar_ts_MWh[i*24*365:(i+1)*24*365], axis=0)
+        tmp[i] = np.mean(solar_ts_MWh[i * 24 * 365:(i + 1) * 24 * 365], axis=0)
     x = np.mean(tmp, axis=0)
     plot_map(map_img)
     plot_signal_on_graph(lon, lat, x, title='Average solar energy [MWh]')
     plot_power_lines(edge_list_lon, edge_list_lat)
-    
+
     # average wind power
     plt.subplot(222)
     tmp = np.zeros((nb_years, nb_nodes))
     for i in range(nb_years):
-        tmp[i] = np.mean(wind_ts_MWh[i*24*365:(i+1)*24*365], axis=0)
+        tmp[i] = np.mean(wind_ts_MWh[i * 24 * 365:(i + 1) * 24 * 365], axis=0)
     x = np.mean(tmp, axis=0)
     plot_map(map_img)
     plot_signal_on_graph(lon, lat, x, title='Average wind energy [MWh]')
     plot_power_lines(edge_list_lon, edge_list_lat)
-    
+
     # average solar forecasting error
     plt.subplot(223)
     tmp = np.zeros((nb_years, nb_nodes))
     for i in range(nb_years):
-        tmp[i] = np.mean(np.abs(solar_diff[i*24*365:(i+1)*24*365]), axis=0)
+        tmp[i] = np.mean(np.abs(solar_diff[i * 24 * 365:(i + 1) * 24 * 365]), axis=0)
     x = np.mean(tmp, axis=0)
     plot_map(map_img)
     plot_signal_on_graph(lon, lat, x, title='Average solar forecasting error [%]')
     plot_power_lines(edge_list_lon, edge_list_lat)
-    
+
     # average wind forecasting error
     plt.subplot(224)
     tmp = np.zeros((nb_years, nb_nodes))
     for i in range(nb_years):
-        tmp[i] = np.mean(np.abs(wind_diff[i*24*365:(i+1)*24*365]), axis=0)
+        tmp[i] = np.mean(np.abs(wind_diff[i * 24 * 365:(i + 1) * 24 * 365]), axis=0)
     x = np.mean(tmp, axis=0)
     plot_map(map_img)
     plot_signal_on_graph(lon, lat, x, title='Average wind forecasting error [%]')
     plot_power_lines(edge_list_lon, edge_list_lat)
     plt.show()
-    
+
+
 # -----------------------------------------------------------------------------------------------------------------
 
 def get_nn_inputs(x):
@@ -274,18 +279,20 @@ def get_nn_inputs(x):
     """
     y = torch.zeros(int(x.shape[0] / 12), x.shape[1], 12)
     for i in range(int(x.shape[0] / 12)):
-        y[i] = torch.from_numpy(x[i*12:(i+1)*12, :].T)
+        y[i] = torch.from_numpy(x[i * 12:(i + 1) * 12, :].T)
     return y
+
 
 def retrieve_ts_from_nn_outputs(x):
     """
     Retrieves the two dimensional numpy time series from the three dimensional tensor format
     """
     x = x.squeeze()
-    y = np.zeros((x.shape[0]*x.shape[2], x.shape[1]))
+    y = np.zeros((x.shape[0] * x.shape[2], x.shape[1]))
     for i in range(x.shape[0]):
-        y[i*x.shape[2]:(i+1)*x.shape[2], :] = x[i].detach().numpy().T
+        y[i * x.shape[2]:(i + 1) * x.shape[2], :] = x[i].detach().numpy().T
     return y
+
 
 # -----------------------------------------------------------------------------------------------------------------
 
@@ -295,8 +302,8 @@ def standardize(x):
     """
     std_data = torch.zeros(x.shape)
     if len(x.shape) > 2:
-        mean = torch.mean(x.reshape((x.shape[0]*x.shape[1], x.shape[2])), axis=0)
-        std = torch.std(x.reshape((x.shape[0]*x.shape[1], x.shape[2])), axis=0)
+        mean = torch.mean(x.reshape((x.shape[0] * x.shape[1], x.shape[2])), axis=0)
+        std = torch.std(x.reshape((x.shape[0] * x.shape[1], x.shape[2])), axis=0)
         for i in range(x.shape[0]):
             centered_data = x[i] - mean
             std_data[i] = centered_data / std
@@ -306,6 +313,7 @@ def standardize(x):
         centered_data = x - mean
         std_data = centered_data / std
     return std_data, mean, std
+
 
 # -----------------------------------------------------------------------------------------------------------------
 
@@ -321,6 +329,7 @@ def fit_standardize(x, mean_stand, std_stand):
         std_data = (x - mean_stand) / std_stand
     return std_data
 
+
 # -----------------------------------------------------------------------------------------------------------------
 
 def train_test_set(feature, label, ratio=0.8):
@@ -335,6 +344,7 @@ def train_test_set(feature, label, ratio=0.8):
     test_target = label[train_sep:]
 
     return train_input, train_target, test_input, test_target
+
 
 # -----------------------------------------------------------------------------------------------------------------
 
@@ -362,8 +372,8 @@ def batch_iter(y, tx, batch_size, num_batches=1, shuffle=True):
         end_index = min((batch_num + 1) * batch_size, data_size)
         if start_index != end_index:
             yield shuffled_y[start_index:end_index], shuffled_tx[start_index:end_index]
-            
-            
+
+
 def train(model, train_inputs, train_targets, test_inputs, test_targets, n_epoch=50, batch_size=10):
     model.reset_parameters()
     loss_fn = nn.MSELoss()
@@ -387,11 +397,11 @@ def train(model, train_inputs, train_targets, test_inputs, test_targets, n_epoch
             train_loss.backward()
             # optimize
             optimizer.step()
-    
+
             running_loss += train_loss.item()
-    
+
         epoch_loss = running_loss / int(train_inputs.shape[0] / batch_size)
-        
+
         running_loss = 0
         for batch_labels, batch_inputs in batch_iter(test_targets, test_inputs, batch_size=batch_size,
                                                      num_batches=int(test_inputs.shape[0] / batch_size)):
@@ -399,10 +409,10 @@ def train(model, train_inputs, train_targets, test_inputs, test_targets, n_epoch
                 pred = model(test_inputs)
                 test_loss = loss_fn(pred, test_targets)
             running_loss += test_loss.item() / int(test_inputs.shape[0] / batch_size)
-        
+
         train_losses.append(epoch_loss)
         test_losses.append(running_loss)
-    
+
         # print statistics
         print(f'epoch: {epoch}, train loss: {epoch_loss}, test loss: {test_loss.item()}')
     print('Training finished!')
@@ -412,16 +422,11 @@ def train(model, train_inputs, train_targets, test_inputs, test_targets, n_epoch
     print('Saving trained model to ' + PATH + '... ')
     torch.save(model, PATH)
     print('Saving trained model to ' + PATH + '... Done!')
-    
+
     ## save losses
     print('Saving losses... ')
     np.savetxt(f'train_loss.txt', train_losses)
     np.savetxt(f'test_loss.txt', test_losses)
     print('Saving losses... Done!')
-    
-    return train_losses, test_losses
 
-                
-            
-    
-    
+    return train_losses, test_losses
