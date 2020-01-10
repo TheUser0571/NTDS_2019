@@ -13,9 +13,9 @@ from net import *
 import geopy.distance # conda install -c conda-forge geopy
 
 # %%
-BASE_PATH = 'P:/Python/Network_tour/Data_for_project/'  # adjust if necessary
+#BASE_PATH = 'P:/Python/Network_tour/Data_for_project/'  # adjust if necessary
 
-# BASE_PATH = 'C:/Users/kay-1/Documents/NTDS_data/'  # Kay's path ;)
+ BASE_PATH = 'C:/Users/kay-1/Documents/NTDS_data/'  # Kay's path ;)
 
 edges = pd.read_csv(BASE_PATH + 'edges.csv')
 nodes = pd.read_csv(BASE_PATH + 'nodes.csv')
@@ -99,25 +99,31 @@ laplacian = compute_laplacian(adjacency, normalize=True)  # adjacency matrix nee
 # spectral decomposition
 lam, U = spectral_decomposition(laplacian)
 
-plot_fig = False  # set false to not plot eigenfunctions
+plot_fig = True  # set false to not plot eigenfunctions
 if plot_fig is True:
     plt.figure(figsize=(18, 9))
     plt.subplot(231)
-    plot_signal_on_graph(lon, lat, x=U[:, 0], title='Eigenfunction #0 $\lambda$ =' + str(float('%.1g' % lam[0])))
+    plot_map(map_img)
+    plot_signal_on_graph(lon, lat, x=U[:, 0], title='Eigenfunction #0 $\lambda$ =' + str(float('%.1g' % lam[0])), vlim=[-0.03,0.03])
     plot_power_lines(edge_list_lon, edge_list_lat)
     plt.subplot(232)
+    plot_map(map_img)
     plot_signal_on_graph(lon, lat, x=U[:, 1], title='Eigenfunction #1 $\lambda$ =' + str(float('%.1g' % lam[1])))
     plot_power_lines(edge_list_lon, edge_list_lat)
     plt.subplot(233)
+    plot_map(map_img)
     plot_signal_on_graph(lon, lat, x=U[:, 2], title='Eigenfunction #2 $\lambda$ =' + str(float('%.1g' % lam[2])))
     plot_power_lines(edge_list_lon, edge_list_lat)
     plt.subplot(234)
+    plot_map(map_img)
     plot_signal_on_graph(lon, lat, x=U[:, 3], title='Eigenfunction #3 $\lambda$ =' + str(float('%.1g' % lam[3])))
     plot_power_lines(edge_list_lon, edge_list_lat)
     plt.subplot(235)
+    plot_map(map_img)
     plot_signal_on_graph(lon, lat, x=U[:, 10], title='Eigenfunction #10 $\lambda$ =' + str(float('%.1g' % lam[10])))
     plot_power_lines(edge_list_lon, edge_list_lat)
     plt.subplot(236)
+    plot_map(map_img)
     plot_signal_on_graph(lon, lat, x=U[:, 100], title='Eigenfunction #100 $\lambda$ =' + str(float('%.1g' % lam[100])))
     plot_power_lines(edge_list_lon, edge_list_lat)
     plt.show()
@@ -326,10 +332,10 @@ if model_name != 'GCN':
     wind_fc_tensor = get_nn_inputs(wind_fc_MWh)
     wind_ts_tensor = get_nn_inputs(wind_ts_MWh)
 else:
-    solar_fc_tensor = torch.Tensor(solar_fc_MWh)
-    solar_ts_tensor = torch.Tensor(solar_fc_MWh)
-    wind_fc_tensor = torch.Tensor(wind_fc_MWh)
-    wind_ts_tensor = torch.Tensor(wind_fc_MWh)
+    solar_fc_tensor = torch.Tensor(solar_fc_MWh[:100])
+    solar_ts_tensor = torch.Tensor(solar_fc_MWh[:100])
+    wind_fc_tensor = torch.Tensor(wind_fc_MWh[:100])
+    wind_ts_tensor = torch.Tensor(wind_fc_MWh[:100])
 
 solar_train_feat, solar_train_target, solar_test_feat, solar_test_target = train_test_set(solar_fc_tensor,
                                                                                           solar_ts_tensor)
@@ -350,9 +356,11 @@ if model_name == 'ConvNet':
 
 # %% train the model for solar engergy (only do with small amount of data)
 train_loss, test_loss = train(model=net, train_inputs=solar_train_feat_std, train_targets=solar_train_target, 
-                              test_inputs=solar_test_feat_std, test_targets=solar_test_target, n_epoch=50, batch_size=15)
+                              test_inputs=solar_test_feat_std, test_targets=solar_test_target, n_epoch=50, batch_size=10)
 plt.plot(train_loss, label='train_loss')
 plt.plot(test_loss, label='test_loss')
+plt.legend()
+plt.show()
 # %% test the trained model
 node = 1000
 start_h = 5000

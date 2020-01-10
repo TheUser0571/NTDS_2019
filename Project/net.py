@@ -64,13 +64,16 @@ class GCN(nn.Module):
         self.W1 = nn.Parameter(torch.rand(self.A.shape))
         self.W2 = nn.Parameter(torch.rand(self.A.shape))
         self.W3 = nn.Parameter(torch.rand(self.A.shape))
+        #self.relu = nn.ReLU()
         
     def forward(self, X):
         X = X.T
         X = torch.cat((torch.Tensor(X), torch.ones(1, X.shape[1])), dim = 0) # adding bias node
         X = self.D.mm(self.A*self.W1).mm(X)
+        #X = self.relu(X) # could be added - maybe even better?
         X = torch.cat((torch.Tensor(X), torch.ones(1, X.shape[1])), dim = 0) # adding bias node
         X = self.D.mm(self.A*self.W2).mm(X)
+        #X = self.relu(X) # could be added - maybe even better?
         X = torch.cat((torch.Tensor(X), torch.ones(1, X.shape[1])), dim = 0) # adding bias node
         X = self.D.mm(self.A*self.W3).mm(X)
         return X.T
