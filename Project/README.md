@@ -22,3 +22,5 @@ File description:
 The trained neural nets used are located in 'trained neural nets/GCN'.
 train_batch_nn_NTDS.sh is the bash file used to train the GCN on the SCITAS computing cluster.
 For instructions on how to use the cluster visit https://www.epfl.ch/research/facilities/scitas/
+
+The RE-Europe dataset used for this project is available at https://drive.google.com/drive/folders/1Ko7AVGlQ13z3_NtRpVLqDxhcv-TJRZjG
