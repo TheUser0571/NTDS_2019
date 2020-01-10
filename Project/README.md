@@ -1,4 +1,4 @@
-EE558 - A Network Tour of Data Science, Final Project Report
+## EE558 - A Network Tour of Data Science, Final Project Report
 
 All the python source code is contained in the src folder.
 The environment should contain the following libraries:
